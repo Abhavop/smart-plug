@@ -1,0 +1,300 @@
+<link rel="icon" href="icon-192.png" type="image/png" />
+<link rel="apple-touch-icon" href="icon-512.png" />
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Smart Plug</title>
+  <meta name="theme-color" content="#0d1321" />
+  <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #0d1321, #05070d);
+      font-family: 'Inter', sans-serif;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* === APP LAYOUT === */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 1rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      animation: slideDown 0.5s ease forwards;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #67e8f9;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.5rem;
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    footer {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(15px);
+      padding: 0.8rem;
+      font-size: 0.8rem;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: #64748b;
+    }
+
+    /* === COMPONENTS === */
+    .toggle-btn {
+      background: linear-gradient(135deg, #0ea5e9, #14b8a6);
+      color: white;
+      border: none;
+      border-radius: 1rem;
+      width: 100%;
+      padding: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+    }
+
+    .toggle-btn.off {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      box-shadow: 0 0 15px rgba(30, 41, 59, 0.4);
+    }
+
+    .toggle-btn:active {
+      transform: scale(0.97);
+      opacity: 0.9;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .online-dot, .offline-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 10px;
+    }
+    .online-dot { background: #22c55e; box-shadow: 0 0 12px #22c55e; }
+    .offline-dot { background: #ef4444; box-shadow: 0 0 12px #ef4444; }
+
+    .log-box {
+      background: rgba(15, 23, 42, 0.9);
+      color: #94a3b8;
+      border-radius: 1rem;
+      flex: 1;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 1rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      height: 200px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 5px; }
+
+    /* AUTH SCREEN */
+    #authSection {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100vh;
+      padding: 2rem;
+      text-align: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    #authSection input {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      border-radius: 1rem;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .hidden { display: none !important; }
+
+    /* === ANIMATIONS === */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+  </style>
+</head>
+
+<body>
+
+  <!-- AUTH SECTION -->
+  <section id="authSection" class="hidden">
+    <h2 class="text-3xl font-bold text-cyan-300 mb-2">Smart Plug</h2>
+    <p class="text-gray-400 text-sm">Enter your Blynk Auth Token to continue</p>
+    <input id="authInput" type="text" placeholder="Paste your Auth Token" />
+    <button id="saveAuthBtn" class="toggle-btn mt-6">Save Token</button>
+  </section>
+
+  <!-- MAIN APP -->
+  <div id="mainSection" class="hidden flex flex-col h-screen">
+    <header>
+      <h1>Smart Plug</h1>
+      <button id="resetAuthBtn" class="text-sm text-gray-400 hover:text-red-400 transition-colors">Reset</button>
+    </header>
+
+    <main>
+      <div>
+        <div class="status">
+          <span id="statusDot" class="offline-dot"></span>
+          <span id="deviceStatus">Offline</span>
+        </div>
+        <button id="toggleBtn" class="toggle-btn off">TURN ON</button>
+      </div>
+
+      <div id="logBox" class="log-box mt-6"></div>
+    </main>
+
+    <footer>© 2025 Abhavv</footer>
+  </div>
+
+  <script>
+    const VPIN_BUTTON = 12;
+    const API_BASE = "https://blynk.cloud/external/api";
+    const logBox = document.getElementById("logBox");
+    const deviceStatus = document.getElementById("deviceStatus");
+    const statusDot = document.getElementById("statusDot");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const mainSection = document.getElementById("mainSection");
+    const authSection = document.getElementById("authSection");
+
+    let plugState = 0, online = false;
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      logBox.innerHTML += `[${time}] ${msg}<br>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function getAuth() { return localStorage.getItem("blynkAuth"); }
+    function saveAuth(t) { localStorage.setItem("blynkAuth", t); }
+    function resetAuth() { localStorage.removeItem("blynkAuth"); location.reload(); }
+
+    document.getElementById("saveAuthBtn").onclick = () => {
+      const token = authInput.value.trim();
+      if (token.length < 10) return alert("Please enter a valid Auth Token!");
+      saveAuth(token);
+      showMain();
+      log("Auth token saved.");
+      checkStatus();
+    };
+    document.getElementById("resetAuthBtn").onclick = resetAuth;
+
+    async function checkStatus() {
+      const token = getAuth();
+      try {
+        const res = await fetch(`${API_BASE}/isHardwareConnected?token=${token}`);
+        const txt = await res.text();
+        if (txt === "true") {
+          deviceStatus.textContent = "Online";
+          statusDot.className = "online-dot";
+          online = true;
+        } else {
+          deviceStatus.textContent = "Offline";
+          statusDot.className = "offline-dot";
+          online = false;
+        }
+      } catch {
+        online = false;
+        statusDot.className = "offline-dot";
+        deviceStatus.textContent = "Offline";
+      }
+    }
+
+    async function getPlugState() {
+      const token = getAuth();
+      try {
+        const res = await fetch(`${API_BASE}/get?token=${token}&V${VPIN_BUTTON}`);
+        const txt = await res.text();
+        const newState = (txt === "1") ? 1 : 0;
+        if (newState !== plugState) log(newState ? "Relay → ON" : "Relay → OFF");
+        plugState = newState;
+        updateToggleUI();
+      } catch { log("Failed to fetch plug state."); }
+    }
+
+    async function togglePlug() {
+      if (!online) return log("Device offline. Command ignored.");
+      const newState = plugState ? 0 : 1;
+      const token = getAuth();
+      try {
+        await fetch(`${API_BASE}/update?token=${token}&V${VPIN_BUTTON}=${newState}`);
+      } catch { log("Error communicating with Blynk API."); }
+    }
+
+    function updateToggleUI() {
+      if (plugState) {
+        toggleBtn.classList.remove("off");
+        toggleBtn.textContent = "ON";
+      } else {
+        toggleBtn.classList.add("off");
+        toggleBtn.textContent = "OFF";
+      }
+    }
+
+    function showMain() {
+      authSection.classList.add("hidden");
+      mainSection.classList.remove("hidden");
+    }
+    function showAuth() {
+      authSection.classList.remove("hidden");
+      mainSection.classList.add("hidden");
+    }
+
+    toggleBtn.onclick = togglePlug;
+    setInterval(checkStatus, 5000);
+    setInterval(() => { if (online) getPlugState(); }, 3000);
+
+    window.onload = async () => {
+      if (getAuth()) {
+        showMain();
+        log("🌐 Smart Plug App started.");
+        log("Checking device status...");
+        await checkStatus();
+        await getPlugState();
+      } else showAuth();
+    };
+
+    // PWA install support
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>
